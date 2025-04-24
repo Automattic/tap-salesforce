@@ -10,11 +10,13 @@ LOGGER = logging.getLogger(__name__)
 
 OAuthCredentials = namedtuple("OAuthCredentials", ("client_id", "client_secret", "refresh_token"))
 
+OAuthCredentialsClientGrant = namedtuple("OAuthCredentials", ("client_id", "client_secret", "grant_type"))
+
 PasswordCredentials = namedtuple("PasswordCredentials", ("username", "password", "security_token"))
 
 
 def parse_credentials(config):
-    for cls in reversed((OAuthCredentials, PasswordCredentials)):
+    for cls in reversed((OAuthCredentials, OAuthCredentialsClientGrant, PasswordCredentials)):
         creds = cls(*(config.get(key) for key in cls._fields))
         if all(creds):
             return creds
@@ -52,6 +54,9 @@ class SalesforceAuth:
     @classmethod
     def from_credentials(cls, credentials, **kwargs):
         if isinstance(credentials, OAuthCredentials):
+            return SalesforceAuthOAuth(credentials, **kwargs)
+
+        if isinstance(credentials, OAuthCredentialsClientGrant):
             return SalesforceAuthOAuth(credentials, **kwargs)
 
         if isinstance(credentials, PasswordCredentials):
@@ -99,9 +104,10 @@ class SalesforceAuthOAuth(SalesforceAuth):
                 error_message = error_message + f", Response from Salesforce: {resp.text}"
             raise Exception(error_message) from e
         finally:
-            LOGGER.info("Starting new login timer")
-            self.login_timer = threading.Timer(self.REFRESH_TOKEN_EXPIRATION_PERIOD, self.login)
-            self.login_timer.start()
+            if self._login_body.get("grant_type") == "refresh_token":
+                LOGGER.info("Starting new login timer")
+                self.login_timer = threading.Timer(self.REFRESH_TOKEN_EXPIRATION_PERIOD, self.login)
+                self.login_timer.start()
 
 
 class SalesforceAuthPassword(SalesforceAuth):

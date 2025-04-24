@@ -50,6 +50,7 @@ PASSWORD_CONFIG_KEYS = PasswordCredentials._fields
 CONFIG = {
     "refresh_token": None,
     "client_id": None,
+    "grant_type": None,
     "client_secret": None,
     "start_date": None,
 }

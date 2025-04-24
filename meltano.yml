@@ -1,0 +1,33 @@
+version: 1
+send_anonymous_usage_stats: false
+plugins:
+  extractors:
+  - name: tap-salesforce
+    namespace: tap_salesforce
+    pip_url: -e .
+    capabilities:
+    - state
+    - catalog
+    - discover
+    settings:
+    - name: client_id
+    - name: client_secret
+      kind: string
+      sensitive: true
+    - name: metrics_log_level
+    - name: api_type
+    - name: select_fields_by_default
+    - name: grant_type
+    - name: is_sandbox
+    config:
+      api_type: rest
+      select_fields_by_default: true
+    select:
+    - contact.*
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
+  - name: target-parquet
+    variant: automattic
+    pip_url: git+https://github.com/Automattic/target-parquet.git
